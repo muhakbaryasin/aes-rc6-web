@@ -1,0 +1,3 @@
+[run]
+source = odex_web
+omit = odex_web/test*

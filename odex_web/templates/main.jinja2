@@ -1,0 +1,102 @@
+<div class="content">
+	<h3>AES-RC6 Demo</h3>
+	<form name="main_form">
+		<table>
+			<tr>
+				<td>Input Text</td>
+				<td>
+					<textarea name="input-text" id="input-text"></textarea>
+				</td>
+			</tr>
+			<tr>
+				<td>&nbsp;</td>
+				<td>
+					<input type="radio" name="text-type" id="text-type" value="plain" checked="checked"/>Plaintext
+					<input type="radio" name="text-type" id="text-type" value="hex"/>Hex
+				</td>
+			</tr>
+			<tr>
+				<td>Function</td>
+				<td>
+					<select name="function" id="function">
+						<option value="aes">AES</option>
+						<option value="aes-rc6">AES-RC6</option>
+					</select>
+				</td>
+			</tr>
+			<tr>
+				<td>Mode</td>
+				<td>
+					<select name="mode" id="mode">
+						<option value="ecb">ECB (electronic codebook)</option>
+					</select>
+				</td>
+			</tr>
+			<tr>
+				<td>Key</td>
+				<td>
+					<input type="text" name="key" id="key"/>
+				</td>
+			</tr>
+			<tr>
+				<td>&nbsp;</td>
+				<td>
+					<input type="radio" id="key-type" name="key-type" value="plain" checked="checked"/>Plaintext
+					<input type="radio" id="key-type" name="key-type" value="hex"/>Hex
+				</td>
+			</tr>
+			<tr>
+				<td>&nbsp;</td>
+				<td>
+					<button type="button" id="btn-encrypt">Encrypt</button>
+					<button type="button" id="btn-decrypt">Decrypt</button>
+				</td>
+			</tr>
+		</table>
+	</form>
+	<div id="result">
+	</div>
+</div>
+<script type="text/javascript" src="{{request.static_url('odex_web:static/jquery-3.4.1.min.js')}}"></script>
+<script language="javascript">			
+	$(document).ready(function(){
+		var input_text;
+		var text_type;
+		var function_;
+		var key;
+		var key_type;
+	
+		function getParams () {
+			input_text = $("#input-text").val();
+			text_type  = $("#text-type:checked").val();
+			function_  = $("#function").val();
+			key	       = $("#key").val();
+			key_type   = $("#key-type:checked").val();
+			
+			return {"input_text" : input_text, "text_type" : text_type, "function" : function_, "key" : key, "key_type" : key_type};
+		}
+		
+		function reqPost (params) {
+			$.ajax({
+				type: "POST",
+				url: "encrypt-decrypt",
+				data: params,
+				dataType: "html"
+			}).done(function (res) {
+				$("#result").html(res);
+			});
+		}
+	
+		$("#btn-encrypt").click(function() {
+			var params = getParams();
+			params["operation"] = "encrypt";
+			reqPost(params);
+		})
+		
+		$("#btn-decrypt").click(function() {
+			var params = getParams();
+			params["operation"] = "decrypt";
+			reqPost(params);
+		})
+	})
+</script>

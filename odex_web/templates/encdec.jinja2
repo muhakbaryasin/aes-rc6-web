@@ -1,0 +1,15 @@
+<style>
+p {
+  font-family: "Courier New", Times, serif;
+  font-size: 11px;
+}
+</style>
+<h5>{{operation}}ed text</h5>
+<p>Execution time : {{time_elapse}} milisecond(s)</p>
+<p>Hex : {{result}}</p>
+<p>Text : {{readable_text}}</p>
+<p>Error message : {{invalid_message}}</p>
+<p>Trace : </p>
+{% for each_ in trace %}
+ <p>{{ each_ }}</p>
+{% endfor %}
