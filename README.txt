@@ -10,7 +10,7 @@ Getting Started
 
 - $VENV/bin/pserve development.ini
 
-
+Credit LD Rahman - https://www.facebook.com/rahman.ode.9
 
 Source
 AES - https://github.com/boppreh/aes
