@@ -20,6 +20,7 @@
 				<td>
 					<select name="function" id="function">
 						<option value="aes">AES</option>
+						<option value="rc6">RC6</option>
 						<option value="aes-rc6">AES-RC6</option>
 					</select>
 				</td>
@@ -84,6 +85,7 @@
 				dataType: "html"
 			}).done(function (res) {
 				$("#result").html(res);
+				$("#readable_text").html(atob($("#readable_text").text()));
 			});
 		}
 	

@@ -1,7 +1,9 @@
 from pyramid.view import view_config
-from .aes_rc6 import AES as AES_RC6
+from .aes_rc6 import AES as AES_RC6, rc6_encrypt, rc6_decrypt
 from time import time
 from datetime import datetime
+import base64
+
 
 @view_config(route_name='home', renderer='templates/mytemplate.jinja2')
 def home(request):
@@ -27,42 +29,64 @@ def encrypt_decrypt_view(request):
 	method = None
 	operation = ""
 	
-	if request.params['text_type'] == 'hex':
-		input_text = bytes.fromhex(request.params['input_text'])
-	else:
-		input_text = request.params['input_text'].encode()
-	
-	if request.params['key_type'] == 'hex':
-		key = request.params['key'].decode('hex').encode()
-	else:
-		key = request.params['key'].encode()
-	
-	if request.params['function'] == 'aes-rc6':
-		args = [key, input_text, True]
-	else:
-		args = [key, input_text]
-	
-	if request.params['operation'] == 'encrypt':
-		operation = 'Encrypt'
-		method = encrypt
-	else:
-		operation = 'Decrypt'
-		method = decrypt
-	
-	result = method(*args)
-	
-	#print("Input text : {}".format(input_text))
-	
-	#print("{}ted : {}".format(operation, result))
-	#print("{}ted in hex : {}".format(operation, result.hex()))
-	readable_text = ""
-	
 	try:
-		readable_text = result[0].decode()
+		
+		if request.params['text_type'] == 'hex':
+			input_text = bytes.fromhex(request.params['input_text'])
+		else:
+			input_text = request.params['input_text'].encode()
+		
+		if request.params['key_type'] == 'hex':
+			key = request.params['key'].decode('hex').encode()
+		else:
+			key = request.params['key'].encode()
+		
+		key = key_pad(key)
+		
+		if request.params['function'] == 'aes-rc6':
+			args = [key, input_text, True]
+		else:
+			args = [key, input_text]
+		
+		if request.params['operation'] == 'encrypt':
+			operation = 'Encrypt'
+			method = encrypt
+			
+			if request.params['function'] == 'rc6':
+				method = encrypt_rc6
+			
+		else:
+			operation = 'Decrypt'
+			method = decrypt
+			
+			if request.params['function'] == 'rc6':
+				method = decrypt_rc6
+	
+		result = method(*args)
+	except Exception as e:
+		invalid_message = str(e)
+		return {'invalid_message': invalid_message, 'operation' : operation}
+
+	readable_text = ""
+
+	try:
+		#readable_text = result[0].decode()
+		pass
 	except Exception as e:
 		readable_text = str(e)
+
+	return {'invalid_message': invalid_message, 'result' : result[0].hex(), 'operation' : operation, 'readable_text' : base64.b64encode(result[0]).decode(), 'time_elapse' : (result[1]), 'trace' : result[2].split('\n')}
+
+def key_pad(key):
+	allowed_key_len = [16, 24, 32]
 	
-	return {'invalid_message': invalid_message, 'result' : result[0].hex(), 'operation' : operation, 'readable_text' : readable_text, 'time_elapse' : (result[1]), 'trace' : result[2].split('\n')}
+	if len(key) in allowed_key_len or len(key) > 32:
+		return key
+	
+	for each_ in allowed_key_len:
+		if len(key) < each_:
+			remaining = each_ - len(key)
+			return ( key + (remaining * b'\0') )
 	
 def params_check(request_params):
 	message = ""
@@ -147,6 +171,44 @@ def decrypt(key, cipher, rc6_enabled = False):
 		result = aes_rc6.decrypt_block( each_block, rc6_enabled = rc6_enabled, trace_enabled = True) 
 		text += result[0]
 		trace += result[1]
+	
+	time_end = time()
+	time_elapsed = int(round( (time_end - time_start) * 1000) )
+	
+	return [(text.partition(b'\0')[0]), time_elapsed, trace]
+
+def encrypt_rc6(key, text):
+	time_start = time()
+
+	if (type(key) is not bytes or type(text) is not bytes):
+		raise Exception("Key and text must be bytes")
+		return
+
+	blocks = create_blocks(text)
+	ciphertext = b''
+	trace = ''
+	
+	for each_block in blocks:
+		ciphertext +=  bytes.fromhex( rc6_encrypt(each_block.hex().upper(), key.hex().upper() ) )
+	
+	time_end = time()
+	time_elapsed = int(round( (time_end - time_start) * 1000) )
+	
+	return [ciphertext, time_elapsed, trace]
+
+def decrypt_rc6(key, text):
+	time_start = time()
+
+	if (type(key) is not bytes or type(text) is not bytes):
+		raise Exception("Key and text must be bytes")
+		return
+
+	blocks = create_blocks(text)
+	text = b''
+	trace = ''
+	
+	for each_block in blocks:
+		text +=  bytes.fromhex( rc6_decrypt(each_block.hex().upper(), key.hex().upper() ) )
 	
 	time_end = time()
 	time_elapsed = int(round( (time_end - time_start) * 1000) )

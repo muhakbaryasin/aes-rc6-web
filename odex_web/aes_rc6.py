@@ -182,7 +182,9 @@ class AES:
         """
         Initializes the object with a given key.
         """
-        assert len(master_key) in AES.rounds_by_key_size
+        if len(master_key) not in AES.rounds_by_key_size:
+            raise Exception('Key length 16/24/32. Your key is {} length'.format(len(master_key)))
+			
         self._key = master_key
         self.n_rounds = AES.rounds_by_key_size[len(master_key)]
         self._key_matrices = self._expand_key(master_key)
@@ -237,7 +239,7 @@ class AES:
         if trace_enabled: trace += "\n" +  ("RK -> {}".format( matrix2bytes(plain_state).hex() ) )
 
         for i in range(1, self.n_rounds):
-            if trace_enabled: trace += "\n" +  ("=========== round {} ===========".format(i))
+            if trace_enabled: trace += "\n" +  ("============== round {} ===============".format(i))
             sub_bytes(plain_state)
             if trace_enabled: trace += "\n" +  ("Sb -> {}".format( matrix2bytes(plain_state).hex() ) )
             shift_rows(plain_state)
@@ -252,7 +254,8 @@ class AES:
                 rc6_cipher = bytes.fromhex( rc6_encrypt(data_hex, self._key.hex().upper() ) )
                 plain_state = bytes2matrix(rc6_cipher)
                 if trace_enabled: trace += "\n" +  ("R6 -> {}".format( matrix2bytes(plain_state).hex() ) )
-
+        
+        if trace_enabled: trace += "\n" +  ("=========== round {} final ===========".format(i + 1))
         sub_bytes(plain_state)
         if trace_enabled: trace += "\n" +  ("Sb -> {}".format( matrix2bytes(plain_state).hex() ) )
         shift_rows(plain_state)
@@ -272,7 +275,7 @@ class AES:
 
         cipher_state = bytes2matrix(ciphertext)
         #if trace_enabled: trace += ( matrix2bytes(cipher_state).hex() )
-        if trace_enabled: trace += ("\n=========== inital =========== for {}".format(matrix2bytes(cipher_state).hex()))	
+        if trace_enabled: trace += ("\n======== round {} initial ========= for {}".format(self.n_rounds, matrix2bytes(cipher_state).hex()))
         add_round_key(cipher_state, self._key_matrices[-1])
         if trace_enabled: trace += "\n" +  ("Rk -> {}".format( matrix2bytes(cipher_state).hex() ) )
         inv_shift_rows(cipher_state)
@@ -281,7 +284,7 @@ class AES:
         if trace_enabled: trace += "\n" +  ("Sb -> {}".format( matrix2bytes(cipher_state).hex() ) )
 
         for i in range(self.n_rounds - 1, 0, -1):
-            if trace_enabled: trace += "\n" +  ("=========== round {} ===========".format(i))
+            if trace_enabled: trace += "\n" +  ("============== round {} ===============".format(i))
             add_round_key(cipher_state, self._key_matrices[i])
             if trace_enabled: trace += "\n" +  ("Rk -> {}".format( matrix2bytes(cipher_state).hex() ) )
             inv_mix_columns(cipher_state)
@@ -297,7 +300,7 @@ class AES:
                 cipher_state = bytes2matrix(rc6_text)
                 if trace_enabled: trace += "\n" +  ("R6 -> {}".format( matrix2bytes(cipher_state).hex() ) )
 
-        if trace_enabled: trace += "\n" +  ("=========== final ===========")
+        if trace_enabled: trace += "\n" +  ("=============== final ================")
         add_round_key(cipher_state, self._key_matrices[0])
         if trace_enabled: trace += "\n" +  ("Rk -> {}".format( matrix2bytes(cipher_state).hex() ) )
 
